@@ -605,13 +605,23 @@ UGraphWidget::UGraphWidget(UGraph *module) {
 
     darkPanel = new SvgPanel;
     darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UGraphPanel.svg")));
-    if (module) {
+#ifndef USING_CARDINAL_NOT_RACK
+    if (module)
+#endif
+    {
         lightPanel = new SvgPanel;
         lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/UGraphPanelLight.svg")));
         lightPanel->visible = false;
         addChild(lightPanel);
     }
     setPanel(darkPanel);
+#ifdef USING_CARDINAL_NOT_RACK
+    if (!settings::darkMode)
+    {
+        darkPanel->visible = false;
+        lightPanel->visible = true;
+    }
+#endif
 
     addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -763,6 +773,7 @@ void UGraphWidget::appendContextMenu(Menu *menu) {
     UGraph *module = dynamic_cast<UGraph*>(this->module);
     assert(module);
 
+#ifndef USING_CARDINAL_NOT_RACK
     // Panel style
     menu->addChild(construct<MenuLabel>());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Panel style"));
@@ -770,6 +781,7 @@ void UGraphWidget::appendContextMenu(Menu *menu) {
                                                       module, &UGraphPanelStyleItem::panelStyle, 0));
     menu->addChild(construct<UGraphPanelStyleItem>(&MenuItem::text, "Light", &UGraphPanelStyleItem::module,
                                                       module, &UGraphPanelStyleItem::panelStyle, 1));
+#endif
 
     // Trigger Output Modes
     menu->addChild(construct<MenuLabel>());
@@ -798,6 +810,10 @@ void UGraphWidget::appendContextMenu(Menu *menu) {
 
 void UGraphWidget::step() {
     if (!module) {
+#ifdef USING_CARDINAL_NOT_RACK
+        darkPanel->visible = settings::darkMode;
+        lightPanel->visible = !settings::darkMode;
+#endif
         Widget::step();
         return;
     }
@@ -830,7 +846,11 @@ void UGraphWidget::step() {
 
     tempoText->text = floatToTempoText(ugraph->tempo);
 
+#ifdef USING_CARDINAL_NOT_RACK
+    if(!settings::darkMode) {
+#else
     if (ugraph->panelStyle == 1) {
+#endif
         darkPanel->visible = false;
         lightPanel->visible = true;
         tempoText->color = lightPanelTextColour;

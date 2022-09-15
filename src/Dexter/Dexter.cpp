@@ -924,13 +924,23 @@ DexterWidget::DexterWidget(Dexter *module) {
 
     darkPanel = new SvgPanel;
     darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DexterPanelDark.svg")));
-    if(module) {
+#ifndef USING_CARDINAL_NOT_RACK
+    if(module)
+#endif
+    {
         lightPanel = new SvgPanel;
         lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/DexterPanelLight.svg")));
         lightPanel->visible = false;
         addChild(lightPanel);
     }
     setPanel(darkPanel);
+#ifdef USING_CARDINAL_NOT_RACK
+    if (!settings::darkMode)
+    {
+        darkPanel->visible = false;
+        lightPanel->visible = true;
+    }
+#endif
 
     addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -1407,6 +1417,7 @@ void DexterWidget::appendContextMenu(Menu *menu) {
     Dexter *module = dynamic_cast<Dexter*>(this->module);
     assert(module);
 
+#ifndef USING_CARDINAL_NOT_RACK
     // Panel style
     menu->addChild(construct<MenuLabel>());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Panel Style"));
@@ -1418,6 +1429,7 @@ void DexterWidget::appendContextMenu(Menu *menu) {
                                                    &DexterPanelStyleItem::module, module,
                                                    &DexterPanelStyleItem::widget, this,
                                                    &DexterPanelStyleItem::panelStyle, 1));
+#endif
 
     // Operator Sync Source
     menu->addChild(construct<MenuLabel>());
@@ -1443,10 +1455,21 @@ void DexterWidget::appendContextMenu(Menu *menu) {
 void DexterWidget::step() {
     if(!module) {
         algo->value = 0;
+#ifdef USING_CARDINAL_NOT_RACK
+        darkPanel->visible = settings::darkMode;
+        lightPanel->visible = !settings::darkMode;
+#endif
         return;
     }
 
     Dexter* dexter = reinterpret_cast<Dexter*>(module);
+
+#ifdef USING_CARDINAL_NOT_RACK
+    if (settings::darkMode != (dexter->panelStyle == 0)) {
+        dexter->panelStyle = settings::darkMode ? 0 : 1;
+        panelChanged = true;
+    }
+#endif
 
     if (panelChanged) {
         panelChanged = false;

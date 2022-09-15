@@ -1608,6 +1608,7 @@ void TerrorformWidget::appendContextMenu(Menu *menu) {
     whiteLEDDisplayStyleItem->displayStyle = 4;
     menu->addChild(whiteLEDDisplayStyleItem);
 
+#ifndef USING_CARDINAL_NOT_RACK
     // Panel style items
     menu->addChild(construct<MenuLabel>());
 
@@ -1626,17 +1627,26 @@ void TerrorformWidget::appendContextMenu(Menu *menu) {
     lightPanelStyleItem->module = module;
     lightPanelStyleItem->panelStyle = 1;
     menu->addChild(lightPanelStyleItem);
+#endif
  }
 
 void TerrorformWidget::step() {
     if (module == nullptr) {
+#ifdef USING_CARDINAL_NOT_RACK
+        panels[TRRFORM_DARK_PANEL_NORMAL]->visible = settings::darkMode;
+        panels[TRRFORM_LIGHT_PANEL_NORMAL]->visible = !settings::darkMode;
+#endif
         Widget::step();
         return;
     }
 
     Terrorform* tform = dynamic_cast<Terrorform*>(module);
 
+#ifdef USING_CARDINAL_NOT_RACK
+    int panelStyleOffset = settings::darkMode ? 0 : 1;
+#else
     int panelStyleOffset = tform->panelStyle;
+#endif
     for (auto i = 0; i < NUM_TRRFORM_PANELS; ++i) {
         panels[i]->visible = false;
     }

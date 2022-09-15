@@ -391,13 +391,23 @@ PlateauWidget::PlateauWidget(Plateau* module) {
 
     darkPanel = new SvgPanel;
     darkPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PlateauPanelDark.svg")));
-    if(module) {
+#ifndef USING_CARDINAL_NOT_RACK
+    if(module)
+#endif
+    {
         lightPanel = new SvgPanel;
         lightPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/PlateauPanelLight.svg")));
         lightPanel->visible = false;
         addChild(lightPanel);
     }
     setPanel(darkPanel);
+#ifdef USING_CARDINAL_NOT_RACK
+    if (!settings::darkMode)
+    {
+        darkPanel->visible = false;
+        lightPanel->visible = true;
+    }
+#endif
 
     addChild(createWidget<ScrewBlack>(Vec(RACK_GRID_WIDTH, 0)));
     addChild(createWidget<ScrewBlack>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -541,12 +551,14 @@ void PlateauWidget::appendContextMenu(Menu *menu) {
     Plateau *module = dynamic_cast<Plateau*>(this->module);
     assert(module);
 
+#ifndef USING_CARDINAL_NOT_RACK
     menu->addChild(construct<MenuLabel>());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Panel style"));
     menu->addChild(construct<PlateauPanelStyleItem>(&MenuItem::text, "Dark", &PlateauPanelStyleItem::module,
                                                     module, &PlateauPanelStyleItem::panelStyle, 0));
     menu->addChild(construct<PlateauPanelStyleItem>(&MenuItem::text, "Light", &PlateauPanelStyleItem::module,
                                                     module, &PlateauPanelStyleItem::panelStyle, 1));
+#endif
 
     menu->addChild(construct<MenuLabel>());
     menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Predelay CV Sensitivity"));
@@ -579,7 +591,11 @@ void PlateauWidget::appendContextMenu(Menu *menu) {
 
 void PlateauWidget::step() {
     if(module) {
+#ifdef USING_CARDINAL_NOT_RACK
+        if(!settings::darkMode) {
+#else
         if(dynamic_cast<Plateau*>(module)->panelStyle == 1) {
+#endif
             darkPanel->visible = false;
             lightPanel->visible = true;
         }
@@ -587,6 +603,11 @@ void PlateauWidget::step() {
             darkPanel->visible = true;
             lightPanel->visible = false;
         }
+    } else {
+#ifdef USING_CARDINAL_NOT_RACK
+        darkPanel->visible = settings::darkMode;
+        lightPanel->visible = !settings::darkMode;
+#endif
     }
     Widget::step();
 }
